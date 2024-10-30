@@ -233,7 +233,7 @@ func query(txt, token string) error {
 
 	if debug {
 		w := bufio.NewWriter(os.Stdout)
-		fmt.Fprintf(w, "POST %s HTTP/1.1\n", api)
+		fmt.Fprintf(w, "\n\nPOST %s HTTP/1.1\n", api)
 		for key, value := range headers {
 			fmt.Fprintf(w, "%s: %s\n", key, value)
 		}
