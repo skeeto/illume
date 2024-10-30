@@ -91,16 +91,14 @@ type Choice struct {
 	Message Message `json:"message"`
 }
 
-type ChatResponse struct {
+type Response struct {
+	Content string
 	Choices []struct {
+		Text  string
 		Delta struct {
 			Content string
 		}
 	}
-}
-
-type CompletionResponse struct {
-	Content string
 }
 
 type Builder struct {
@@ -278,15 +276,19 @@ func query(txt, token string) error {
 			break
 		}
 
-		if chat {
-			var r ChatResponse
-			json.Unmarshal(line, &r)
-			w.WriteString(r.Choices[0].Delta.Content)
+		var r Response
+        json.Unmarshal(line, &r)
+
+        // Response schemas are all over the place. Try reading from
+        // three different schemas at once. Missing fields are likely
+        // empty strings, and so produce no output.
+		if len(r.Choices) > 0 {
+			w.WriteString(r.Choices[0].Delta.Content) // chat
+			w.WriteString(r.Choices[0].Text)          // completion
 		} else {
-			var r CompletionResponse
-			json.Unmarshal(line, &r)
-			w.WriteString(r.Content)
+			w.WriteString(r.Content) // completion
 		}
+
 		w.Flush()
 	}
 	if err := s.Err(); err != nil {
