@@ -235,6 +235,15 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			}
 			continue
 
+		} else if command == "!token" {
+			token := strings.TrimSpace(args)
+			if token == "" {
+				delete(s.Headers, "authorization")
+			} else {
+				s.Headers["authorization"] = "Bearer " + token
+			}
+			continue
+
 		} else if command == "!debug" {
 			s.Debug = true
 			continue

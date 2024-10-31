@@ -136,6 +136,11 @@ Load a profile. JSON `!:KEY` directives in the profile do not override
 user-set keys. If no `!profile` is given, Illume loads `$ILLUME_PROFILE`
 if set, otherwise it loads the default profile.
 
+### `!token [TOKEN]`
+
+Sets an API token. Overrides `$ILLUME_TOKEN`. Most useful for setting a
+token in a custom profile. Given no token, none will be sent.
+
 ### `!api URL`
 
 Sets the API base URL. Typically ends with `v1` or `v2`. Any `{…}` in the
@@ -206,8 +211,8 @@ Insert an arbitrary HTTP header into the request. Examples:
 !>authorization
 ```
 
-If `VALUE` is missing, the header is deleted. This can be used, for
-instance, to disable sending the API token, as shown above.
+If `VALUE` is missing, the header is deleted. This is, for instance, a
+second for disabling the API token, as shown in the example.
 
 ### `!completion`
 
