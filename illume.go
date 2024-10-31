@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/fs"
+	"io/ioutil"
 	"net/http"
 	"os"
-	"path/filepath"
+	fp "path/filepath"
 	"strings"
 )
 
@@ -61,7 +61,7 @@ func addcontext(prompt *bytes.Buffer, line string) error {
 		cut--
 	}
 
-	return filepath.WalkDir(dir, func(path string, info fs.DirEntry, err error) error {
+	return fp.Walk(dir, func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -125,12 +125,21 @@ func (b *Builder) New(role string) []Message {
 	return b.Messages
 }
 
+func cut(s string, b byte) (string, string, bool) {
+	for i := 0; i < len(s); i++ {
+		if s[i] == b {
+			return s[:i], s[i+1:], true
+		}
+	}
+	return s, s[len(s):], false
+}
+
 func query(txt, token string) error {
 	var (
 		api     = "http://invalid./"
 		builder Builder
 		client  http.Client
-		data    = map[string]any{
+		data    = map[string]interface{}{
 			"max_tokens": 1000,
 		}
 		debug   = false
@@ -145,8 +154,8 @@ func query(txt, token string) error {
 	}
 
 	for line, lines := txt, txt; len(lines) > 0; {
-		line, lines, _ = strings.Cut(lines, "\n")
-		command, args, _ := strings.Cut(line, " ")
+		line, lines, _ = cut(lines, '\n')
+		command, args, _ := cut(line, ' ')
 
 		if strings.HasPrefix(line, "!!") {
 			line = line[1:] // escape "!!" as "!"
@@ -200,7 +209,7 @@ func query(txt, token string) error {
 			if args == "" {
 				delete(data, key)
 			} else {
-				var value any
+				var value interface{}
 				err := json.Unmarshal(([]byte)(args), &value)
 				if err != nil {
 					data[key] = args
@@ -255,7 +264,7 @@ func query(txt, token string) error {
 	defer resp.Body.Close()
 
 	if resp.StatusCode != 200 {
-		ebody, _ := io.ReadAll(resp.Body)
+		ebody, _ := ioutil.ReadAll(resp.Body)
 		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, string(ebody))
 	}
 
