@@ -129,7 +129,7 @@ func (b *Builder) Append(line string) {
 }
 
 func (b *Builder) New(role string) []Message {
-	content := strings.TrimSpace(b.Content.String())
+	content := strings.Trim(b.Content.String(), "\r\n")
 	if content != "" {
 		if b.Role == "" {
 			b.Role = "system"
