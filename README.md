@@ -1,4 +1,4 @@
-# Illume: a scriptable LLM command line program
+# Illume: scriptable command line program for LLM interfacing
 
 A unix filter for talking to an OpenAI-compatible LLM API. Sends standard
 input to the LLM and streams its response to standard output. In a text
@@ -11,12 +11,12 @@ append its output to your buffer.
 
 Then place `illume` on your `$PATH`.
 
-## Usage
+## How to use
 
 A couple of examples running outside of a text editor:
 
     $ illume <request.md >response.md
-    $ illume <chat.md | tee /dev/stderr | sponge -a chat.md
+    $ illume <chat.md | tee -a chat.md
 
 A Vim configuration that animates the streaming output:
 
@@ -52,7 +52,7 @@ map <leader>s :call IllumeStop()<cr>
 map <leader>u Go<cr>!user<cr><cr>
 ```
 
-## Example
+## Example usage
 
 Use `!context` to select files to upload as context. These are uploaded in
 full, mind the token limit and narrow the context as needed by pointing to
