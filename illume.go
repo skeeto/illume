@@ -122,6 +122,9 @@ func (b *Builder) New(role string) []Message {
 	}
 	b.Role = role
 	b.Content = bytes.Buffer{}
+	if len(b.Messages) == 0 {
+		return []Message{}
+	}
 	return b.Messages
 }
 
