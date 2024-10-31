@@ -7,7 +7,9 @@ append its output to your buffer.
 
 ## How to build
 
-    $ go build
+Using any Go 1.x compiler:
+
+    $ go build illume.go
 
 Then place `illume` on your `$PATH`.
 
