@@ -130,6 +130,12 @@ An `!error` "directive" appears in error output, but it's not processed on
 input. Everything before `!user` and `!assistant` are in the "system"
 sole, which is where you can write a system prompt.
 
+### `!profile NAME`
+
+Load a profile. JSON `!:KEY` directives in the profile do not override
+user-set keys. If no `!profile` is given, Illume loads `$ILLUME_PROFILE`
+if set, otherwise it loads the default profile.
+
 ### `!api URL`
 
 Sets the API base URL. Typically ends with `v1` or `v2`. Any `{…}` in the

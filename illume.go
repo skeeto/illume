@@ -164,25 +164,59 @@ func interpolate(s string, vars map[string]interface{}) (string, error) {
 	}
 }
 
-func query(txt, token string) error {
-	var (
-		api     = "http://invalid./"
-		builder Builder
-		client  http.Client
-		data    = map[string]interface{}{
-			"max_tokens": 1000,
-		}
-		debug   = false
-		chat    = true
-		headers = map[string]string{
-			"content-type": "application/json",
-		}
-	)
+type ChatState struct {
+	Profile string
+	Api     string
+	Builder Builder
+	Data    map[string]interface{}
+	UserSet map[string]bool
+	Headers map[string]string
+	Debug   bool
+	Chat    bool
+}
 
-	if token != "" {
-		headers["authorization"] = "Bearer " + token
+func NewChatState(token string) *ChatState {
+	s := &ChatState{
+		Api: "http://invalid./",
+		Data: map[string]interface{}{
+			"max_tokens": 1000,
+		},
+		UserSet: map[string]bool{},
+		Chat:    true,
+		Headers: map[string]string{
+			"content-type": "application/json",
+		},
 	}
 
+	if token != "" {
+		s.Headers["authorization"] = "Bearer " + token
+	}
+
+	return s
+}
+
+func (s *ChatState) LoadProfile(profile string, depth int) error {
+	var body string
+	if lines, ok := Profiles[profile]; ok {
+		var buf bytes.Buffer
+		for _, line := range lines {
+			buf.WriteString(line)
+			buf.WriteString("\n")
+		}
+		body = buf.String()
+	} else {
+
+		buf, err := ioutil.ReadFile(profile)
+		if err != nil {
+			return err
+		}
+		body = string(buf)
+	}
+	s.Profile = profile
+	return s.Load(body, depth+1) // may recurse
+}
+
+func (s *ChatState) Load(txt string, depth int) error {
 	for line, lines := txt, txt; len(lines) > 0; {
 		line, lines, _ = cut(lines, '\n')
 		command, args, _ := cut(line, ' ')
@@ -190,16 +224,23 @@ func query(txt, token string) error {
 		if strings.HasPrefix(line, "!!") {
 			line = line[1:] // escape "!!" as "!"
 
+		} else if command == "!profile" {
+			profile := strings.TrimSpace(args)
+			if err := s.LoadProfile(profile, depth); err != nil {
+				return err
+			}
+			continue
+
 		} else if command == "!debug" {
-			debug = true
+			s.Debug = true
 			continue
 
 		} else if command == "!completion" {
-			chat = false
+			s.Chat = false
 			continue
 
 		} else if command == "!context" {
-			if err := addcontext(&builder.Content, line); err != nil {
+			if err := addcontext(&s.Builder.Content, line); err != nil {
 				return err
 			}
 			continue
@@ -209,51 +250,81 @@ func query(txt, token string) error {
 			continue
 
 		} else if command == "!begin" {
-			builder = Builder{}
+			s.Builder = Builder{}
 			continue
 
 		} else if command == "!end" {
 			break
 
 		} else if command == "!api" {
-			api = strings.TrimSpace(args)
+			s.Api = strings.TrimSpace(args)
 			continue
 
 		} else if command == "!assistant" || command == "!user" {
-			builder.New(command[1:])
+			s.Builder.New(command[1:])
 			continue
 
 		} else if len(command) > 2 && command[:2] == "!>" {
 			key := command[2:]
 			args = strings.TrimSpace(args)
 			if args == "" {
-				delete(headers, key)
+				delete(s.Headers, key)
 			} else {
-				headers[key] = args
+				s.Headers[key] = args
 			}
 			continue
 
 		} else if len(command) > 2 && command[:2] == "!:" {
 			key := command[2:]
+			if depth > 0 {
+				if hard, ok := s.UserSet[key]; ok && hard {
+					continue // do not override
+				}
+			}
+
 			args = strings.TrimSpace(args)
 			if args == "" {
-				delete(data, key)
+				delete(s.Data, key)
 			} else {
 				var value interface{}
 				err := json.Unmarshal(([]byte)(args), &value)
 				if err != nil {
-					data[key] = args
+					s.Data[key] = args
 				} else {
-					data[key] = value
+					s.Data[key] = value
 				}
 			}
+			s.UserSet[key] = depth == 0
 			continue
 		}
 
-		builder.Append(line)
+		s.Builder.Append(line)
 	}
 
-	api, err := interpolate(api, data)
+	return nil
+}
+
+func query(profile, txt, token string) error {
+	var (
+		client http.Client
+		state  = NewChatState(token)
+	)
+
+	if err := state.Load(txt, 0); err != nil {
+		return err
+	}
+
+	if state.Profile == "" {
+		// No profile loaded yet. Load one now.
+		if profile == "" {
+			profile = DefaultProfile
+		}
+		if err := state.LoadProfile(profile, 1); err != nil {
+			return err
+		}
+	}
+
+	api, err := interpolate(state.Api, state.Data)
 	if err != nil {
 		return fmt.Errorf("interpolating URL: %w", err)
 	}
@@ -262,21 +333,21 @@ func query(txt, token string) error {
 		api += "/"
 	}
 
-	if chat {
+	if state.Chat {
 		api += "chat/completions"
-		data["messages"] = builder.New("")
+		state.Data["messages"] = state.Builder.New("")
 	} else {
 		api += "completions"
-		data["prompt"] = builder.New("")[0].Content
+		state.Data["prompt"] = state.Builder.New("")[0].Content
 	}
 
-	data["stream"] = true
-	body, _ := json.Marshal(data)
+	state.Data["stream"] = true
+	body, _ := json.Marshal(state.Data)
 
-	if debug {
+	if state.Debug {
 		w := bufio.NewWriter(os.Stdout)
 		fmt.Fprintf(w, "\n\nPOST %s HTTP/1.1\n", api)
-		for key, value := range headers {
+		for key, value := range state.Headers {
 			fmt.Fprintf(w, "%s: %s\n", key, value)
 		}
 		fmt.Fprintf(w, "\n%s\n", body)
@@ -288,7 +359,7 @@ func query(txt, token string) error {
 		return err
 	}
 
-	for key, value := range headers {
+	for key, value := range state.Headers {
 		req.Header.Set(key, value)
 	}
 
@@ -304,7 +375,7 @@ func query(txt, token string) error {
 	}
 
 	w := bufio.NewWriter(os.Stdout)
-	if chat {
+	if state.Chat {
 		w.WriteString("\n\n!assistant\n\n")
 		w.Flush()
 	}
@@ -343,33 +414,14 @@ func query(txt, token string) error {
 }
 
 func run() error {
-	profile := os.Getenv("ILLUME_PROFILE")
-	if profile == "" {
-		profile = DefaultProfile
-	}
-
-	var buf bytes.Buffer
-	if lines, ok := Profiles[profile]; ok {
-		for _, line := range lines {
-			buf.WriteString(line)
-			buf.WriteString("\n")
-		}
-	} else {
-		f, err := os.Open(profile)
-		if err != nil {
-			return err
-		}
-		if _, err := io.Copy(&buf, f); err != nil {
-			return err
-		}
-	}
-
-	if _, err := io.Copy(&buf, os.Stdin); err != nil {
+	body, err := ioutil.ReadAll(os.Stdin)
+	if err != nil {
 		return err
 	}
 
+	profile := os.Getenv("ILLUME_PROFILE")
 	token := os.Getenv("ILLUME_TOKEN")
-	return query(buf.String(), token)
+	return query(profile, string(body), token)
 }
 
 func main() {
