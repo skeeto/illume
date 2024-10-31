@@ -277,11 +277,11 @@ func query(txt, token string) error {
 		}
 
 		var r Response
-        json.Unmarshal(line, &r)
+		json.Unmarshal(line, &r)
 
-        // Response schemas are all over the place. Try reading from
-        // three different schemas at once. Missing fields are likely
-        // empty strings, and so produce no output.
+		// Response schemas are all over the place. Try reading from
+		// three different schemas at once. Missing fields are likely
+		// empty strings, and so produce no output.
 		if len(r.Choices) > 0 {
 			w.WriteString(r.Choices[0].Delta.Content) // chat
 			w.WriteString(r.Choices[0].Text)          // completion
