@@ -183,11 +183,9 @@ Stop processing directives and ignore the rest of the input.
 
 Insert an arbitrary JSON value into the query object. Examples:
 
-```
-!:temperature 0.3
-!:model mistralai/Mistral-Nemo-Instruct-2407
-!:stop ["<|im_end|>"]
-```
+    !:temperature 0.3
+    !:model mistralai/Mistral-Nemo-Instruct-2407
+    !:stop ["<|im_end|>"]
 
 If `VALUE` is missing, the key is deleted instead. If it cannot be parsed
 as JSON, it's passed through as a string. If it looks like JSON but should
@@ -197,11 +195,9 @@ be sent as string data, wrap it in quotes to turn it into a JSON string.
 
 Insert an arbitrary HTTP header into the request. Examples:
 
-```
-!>x-use-cache false
-!>user-agent My LLM Client 1.0
-!>authorization
-```
+    !>x-use-cache false
+    !>user-agent My LLM Client 1.0
+    !>authorization
 
 If `VALUE` is missing, the header is deleted. This is, for instance, a
 second for disabling the API token, as shown in the example.
