@@ -178,9 +178,13 @@ type ChatState struct {
 	Chat    bool
 }
 
+const (
+	InvalidUrl = "http://invalid./"
+)
+
 func NewChatState(token string) *ChatState {
 	s := &ChatState{
-		Api: "http://invalid./",
+		Api: InvalidUrl,
 		Data: map[string]interface{}{
 			"max_tokens": 1000,
 		},
@@ -270,7 +274,9 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			break
 
 		} else if command == "!api" {
-			s.Api = strings.TrimSpace(args)
+			if s.Api == InvalidUrl || depth == 0 {
+				s.Api = strings.TrimSpace(args)
+			}
 			continue
 
 		} else if command == "!assistant" || command == "!user" {
