@@ -216,11 +216,12 @@ func (s *ChatState) LoadProfile(profile string, depth int) error {
 		body = string(buf)
 	}
 	s.Profile = profile
-	return s.Load(body, depth+1) // may recurse
+	return s.Load(profile, body, depth+1) // may recurse
 }
 
-func (s *ChatState) Load(txt string, depth int) error {
-	for line, lines := txt, txt; len(lines) > 0; {
+func (s *ChatState) Load(name, txt string, depth int) error {
+	lineno := 1
+	for line, lines := txt, txt; len(lines) > 0; lineno++ {
 		line, lines, _ = cut(lines, '\n')
 		command, args, _ := cut(line, ' ')
 
@@ -230,7 +231,7 @@ func (s *ChatState) Load(txt string, depth int) error {
 		} else if command == "!profile" {
 			profile := strings.TrimSpace(args)
 			if err := s.LoadProfile(profile, depth); err != nil {
-				return err
+				return fmt.Errorf("%s:%d: %w", name, lineno, err)
 			}
 			continue
 
@@ -244,7 +245,7 @@ func (s *ChatState) Load(txt string, depth int) error {
 
 		} else if command == "!context" {
 			if err := addcontext(&s.Builder.Content, line); err != nil {
-				return err
+				return fmt.Errorf("%s:%d: %w", name, lineno, err)
 			}
 			continue
 
@@ -313,7 +314,7 @@ func query(profile, txt, token string) error {
 		state  = NewChatState(token)
 	)
 
-	if err := state.Load(txt, 0); err != nil {
+	if err := state.Load("<stdin>", txt, 0); err != nil {
 		return err
 	}
 
