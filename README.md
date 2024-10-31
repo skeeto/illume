@@ -132,7 +132,13 @@ sole, which is where you can write a system prompt.
 
 ### `!api URL`
 
-Chat completions API endpoint.
+Sets the API base URL. Typically ends with `v1` or `v2`. Any `{…}` in the
+URL interpolates JSON values from `!:KEY` directives. This is done just
+before making the request, and so may reference keys set after the `!api`
+directive. Examples:
+
+    !api http://localhost:8080/v1
+    !api https://api-inference.huggingface.co/models/{model}/v1
 
 ### `!context FILE`
 

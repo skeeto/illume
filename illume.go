@@ -23,8 +23,8 @@ var Profiles = map[string][]string{
 		"!:cache_prompt true",
 	},
 	"huggingface.co": []string{
-		"!api https://api-inference.huggingface.co/models/" +
-			"Qwen/Qwen2.5-72B-Instruct" + "/v1",
+		"!api https://api-inference.huggingface.co/models/{model}/v1",
+		"!:model Qwen/Qwen2.5-72B-Instruct",
 		"!>x-use-cache false",
 	},
 }
@@ -134,6 +134,36 @@ func cut(s string, b byte) (string, string, bool) {
 	return s, s[len(s):], false
 }
 
+func interpolate(s string, vars map[string]interface{}) (string, error) {
+	var b bytes.Buffer
+
+	for {
+		pre, key, ok := cut(s, '{')
+		b.WriteString(pre)
+		if !ok {
+			return b.String(), nil
+		}
+
+		key, s, ok = cut(key, '}')
+		if !ok {
+			return "", fmt.Errorf("unmatched '}'")
+		}
+
+		value, ok := vars[key]
+		if !ok {
+			return "", fmt.Errorf("missing key: %s", key)
+		}
+
+		svalue, ok := value.(string)
+		if ok {
+			b.WriteString(svalue)
+		} else {
+			r, _ := json.Marshal(value)
+			b.Write(r)
+		}
+	}
+}
+
 func query(txt, token string) error {
 	var (
 		api     = "http://invalid./"
@@ -221,6 +251,11 @@ func query(txt, token string) error {
 		}
 
 		builder.Append(line)
+	}
+
+	api, err := interpolate(api, data)
+	if err != nil {
+		return fmt.Errorf("interpolating URL: %w", err)
 	}
 
 	if !strings.HasSuffix(api, "/") {
