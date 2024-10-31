@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -32,17 +31,34 @@ var Profiles = map[string][]string{
 func addfile(w *bytes.Buffer, path string, name string) error {
 	w.WriteString("**`")
 	w.WriteString(name)
-	w.WriteString("`**\n```\n")
+	w.WriteString("`**\n")
 
-	f, err := os.Open(path)
+	body, err := ioutil.ReadFile(name)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	txt := string(body)
 
-	_, err = io.Copy(w, f) // FIXME: filter nested code fences
+	max := 2
+	for line, lines := txt, txt; len(lines) > 0; {
+		line, lines, _ = cut(lines, '\n')
+		n := 0
+		for ; n < len(line) && line[n] == '`'; n++ {
+		}
+		if n > max {
+			max = n
+		}
+	}
 
-	w.WriteString("```\n\n")
+	for i := 0; i < max+1; i++ {
+		w.WriteByte('`')
+	}
+	w.WriteByte('\n')
+	w.WriteString(txt)
+	for i := 0; i < max+1; i++ {
+		w.WriteByte('`')
+	}
+	w.WriteString("\n\n")
 	return err
 }
 
