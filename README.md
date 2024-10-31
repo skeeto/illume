@@ -59,45 +59,39 @@ full, mind the token limit and narrow the context as needed by pointing to
 subdirectories or temporarily deleting files. Put `!user` on its own line,
 then your question:
 
-```
-!context /path/to/repository .py .sql
+    !context /path/to/repository .py .sql
 
-!user
+    !user
 
-Do you suggest any additional indexes?
-```
+    Do you suggest any additional indexes?
 
 Sending this to `illume` retrieves a reply:
 
-```
-!context /path/to/repository .py .sql
+    !context /path/to/repository .py .sql
 
-!user
+    !user
 
-Do you suggest any additional indexes?
+    Do you suggest any additional indexes?
 
-!assistant
+    !assistant
 
-Yes, your XYZ table...
-```
+    Yes, your XYZ table...
 
 Add your response with another `!user`:
 
-```
-!context /path/to/repository .py .sql
+    !context /path/to/repository .py .sql
 
-!user
+    !user
 
-Do you suggest any additional indexes?
+    Do you suggest any additional indexes?
 
-!assistant
+    !assistant
 
-Yes, your XYZ table...
+    Yes, your XYZ table...
 
-!user
+    !user
 
-But what about ...?
-```
+    But what about ...?
 
 Rinse and repeat. The text file is the entire state of the conversation.
 
@@ -106,10 +100,8 @@ Rinse and repeat. The text file is the entire state of the conversation.
 Alternatively the LLM can continue from text of your input using the
 `!complete` directive.
 
-```
-!completion
-The meaning of life is
-```
+    !completion
+    The meaning of life is
 
 Do not use `!user` nor `!assistant` in this mode, but the other options
 still work.
@@ -128,7 +120,7 @@ keys, HTTP headers, or even a system prompt.
 
 An `!error` "directive" appears in error output, but it's not processed on
 input. Everything before `!user` and `!assistant` are in the "system"
-sole, which is where you can write a system prompt.
+role, which is where you can write a system prompt.
 
 ### `!profile NAME`
 
