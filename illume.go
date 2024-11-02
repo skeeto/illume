@@ -20,6 +20,7 @@ var Profiles = map[string][]string{
 	"llama.cpp": []string{
 		"!api http://localhost:8080/v1",
 		"!:cache_prompt true",
+		`!:stop ["<|im_end|>"]`,
 	},
 	"huggingface.co": []string{
 		"!api https://api-inference.huggingface.co/models/{model}/v1",
