@@ -184,6 +184,12 @@ func interpolate(s string, vars map[string]interface{}) (string, error) {
 	}
 }
 
+const (
+	TypeChat = iota
+	TypeCompletion
+	TypeInfill
+)
+
 type ChatState struct {
 	Profile string
 	Api     string
@@ -191,8 +197,8 @@ type ChatState struct {
 	Data    map[string]interface{}
 	UserSet map[string]bool
 	Headers map[string]string
+	Type    int
 	Debug   bool
-	Chat    bool
 }
 
 const (
@@ -206,7 +212,7 @@ func NewChatState(token string) *ChatState {
 			"max_tokens": 1000,
 		},
 		UserSet: map[string]bool{},
-		Chat:    true,
+		Type:    TypeChat,
 		Headers: map[string]string{
 			"content-type": "application/json",
 		},
@@ -270,7 +276,7 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			continue
 
 		} else if command == "!completion" {
-			s.Chat = false
+			s.Type = TypeCompletion
 			continue
 
 		} else if command == "!context" {
@@ -298,6 +304,11 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!assistant" || command == "!user" {
 			s.Builder.New(command[1:])
+			continue
+
+		} else if command == "!infill" {
+			s.Type = TypeInfill
+			s.Builder.New("infill")
 			continue
 
 		} else if len(command) > 2 && command[:2] == "!>" {
@@ -340,6 +351,11 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 	return nil
 }
 
+func endsWithVersion(s string) bool {
+	n := len(s)
+	return n > 3 && s[n-3] == 'v' && s[n-2] >= '0' && s[n-2] <= '9'
+}
+
 func query(profile, txt, token string) error {
 	var (
 		client http.Client
@@ -369,12 +385,41 @@ func query(profile, txt, token string) error {
 		api += "/"
 	}
 
-	if state.Chat {
+	switch state.Type {
+	case TypeChat:
 		api += "chat/completions"
 		state.Data["messages"] = state.Builder.New("")
-	} else {
+	case TypeCompletion:
 		api += "completions"
 		state.Data["prompt"] = state.Builder.New("")[0].Content
+	case TypeInfill:
+		// llama.cpp only
+		if !endsWithVersion(api) {
+			return fmt.Errorf("cannot determine infill URL: %s", api)
+		}
+		api = api[:len(api)-3] + "infill"
+
+		// TODO: Reduce the number of predicted tokens? In general, the
+		// reliability of generated code follows the inverse-square law
+		// by number of lines of code. Best used in short bursts. Infill
+		// tends to generate extraneous, unwanted code, like "tests" and
+		// examples, and maybe predicting fewer would help. Though in my
+		// experiments, predicting few didn't make a difference.
+
+		state.Data["prompt"] = "" // prompt is required
+
+		// TODO: Consider trimming prefix/suffix? Maybe to a certain
+		// number of lines to the nearest blank line. Otherwise this
+		// will not work well on large source files. On the other hand
+		// it might lose critical context. A smarter tool would crush
+		// the context down to just declarations/prototypes.
+		parts := state.Builder.New("")
+		state.Data["input_prefix"] = parts[0].Content + "\n"
+		if len(parts) > 1 {
+			state.Data["input_suffix"] = "\n" + parts[1].Content
+		} else {
+			state.Data["input_suffix"] = ""
+		}
 	}
 
 	state.Data["stream"] = true
@@ -411,7 +456,7 @@ func query(profile, txt, token string) error {
 	}
 
 	w := bufio.NewWriter(os.Stdout)
-	if state.Chat {
+	if state.Type == TypeChat {
 		w.WriteString("\n\n!assistant\n\n")
 		w.Flush()
 	}

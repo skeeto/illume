@@ -20,39 +20,11 @@ A couple of examples running outside of a text editor:
     $ illume <request.md >response.md
     $ illume <chat.md | tee -a chat.md
 
-A Vim configuration that animates the streaming output:
+`illume.vim` has a Vim configuration for interacting with live output:
 
-```vim
-function! IllumeAppend(channel, msg)
-    let buf = ch_getbufnr(a:channel, 'err')
-    let msg = split(a:msg, '\n', 1)
-    for i in range(len(msg))
-        call setbufline(buf, '$', getbufline(buf, '$')[0] .. msg[i])
-        if i < len(msg) - 1
-            call appendbufline(buf, '$', '')
-        endif
-    endfor
-endfunction
-
-function! IllumeStop()
-    call job_stop(b:assistant_job)
-endfunction
-
-function! Illume()
-    let b:assistant_job = job_start(['illume'], #{
-        \ in_io: 'buffer',
-        \ in_buf: bufnr(),
-        \ out_cb: function('IllumeAppend'),
-        \ out_mode: 'raw',
-        \ err_io: 'buffer',
-        \ err_buf: bufnr(),
-        \ })
-endfunction
-
-map <leader>a :call Illume()<cr>
-map <leader>s :call IllumeStop()<cr>
-map <leader>u Go<cr>!user<cr><cr>
-```
+* `Illume()`: complete the end the buffer (chat, `!completion`)
+* `IllumeInfill()`: generate code at the cursor
+* `IllumeStop()`: stop generation in this buffer
 
 ## Example usage
 
@@ -107,6 +79,16 @@ Alternatively the LLM can continue from text of your input using the
 
 Do not use `!user` nor `!assistant` in this mode, but the other options
 still work.
+
+### Infill mode
+
+If the input contains `!infill`, Illume will use infill mode. Output is to
+be inserted in place of `!infill`, i.e. code generation. Infill requires
+llama.cpp's `/infill` endpoint and a model supporting infill tokens (some
+"coder" models). Most models and endpoints will not work.
+
+With `illume.vim` do not write `!infill` yourself. The configuration
+inserts it into Illume's input at the cursor position.
 
 ## Environment
 
@@ -209,6 +191,10 @@ second for disabling the API token, as shown in the example.
 Use completion mode instead of conversational. The LLM will continue
 writing from the end of the document. Cannot be used with `!user` or
 `!assistant`, which are for the (default) chat mode.
+
+### `!infill`
+
+Use infill mode, and generate code to be inserted at this position.
 
 ### `!debug`
 
