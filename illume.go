@@ -27,6 +27,25 @@ var Profiles = map[string][]string{
 		"!:model Qwen/Qwen2.5-72B-Instruct",
 		"!>x-use-cache false",
 	},
+
+	// Fill in the Middle (FIM), ranked from best to worst.
+	"fim:deepseek": []string{ // best of class, works with /infill
+		"!infill <｜fim▁begin｜>{prefix}<｜fim▁hole｜>{suffix}<｜fim▁end｜>",
+	},
+	"fim:qwen": []string{ // good, also works with /infill
+		"!infill <|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>",
+	},
+	"fim:mistral": []string{ // specifically codestral, mediocre
+		"!infill [SUFFIX]{suffix}[PREFIX]{prefix}",
+	},
+	"fim:codellama": []string{ // produces far too much code, poor
+		"!infill  <PRE> {prefix} <SUF>{suffix} <MID>",
+		`!:stop ["<EOT>"]`,
+	},
+	// CodeGemma is notably missing because its llama.cpp tokenizer is
+	// broken, so FIM is inaccessible from the completion endpoint. It's
+	// supported by the /infill endpoint, so use that instead. Results
+	// are on par with CodeLlama.
 }
 
 func addfile(w *bytes.Buffer, path string, name string) error {
@@ -188,11 +207,13 @@ const (
 	TypeChat = iota
 	TypeCompletion
 	TypeInfill
+	TypeFim
 )
 
 type ChatState struct {
 	Profile string
 	Api     string
+	FimTmpl string
 	Builder Builder
 	Data    map[string]interface{}
 	UserSet map[string]bool
@@ -307,7 +328,14 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			continue
 
 		} else if command == "!infill" {
-			s.Type = TypeInfill
+			if args == "" {
+				if s.Type != TypeFim {
+					s.Type = TypeInfill
+				}
+			} else {
+				s.Type = TypeFim
+				s.FimTmpl = args
+			}
 			s.Builder.New("infill")
 			continue
 
@@ -389,9 +417,11 @@ func query(profile, txt, token string) error {
 	case TypeChat:
 		api += "chat/completions"
 		state.Data["messages"] = state.Builder.New("")
+
 	case TypeCompletion:
 		api += "completions"
 		state.Data["prompt"] = state.Builder.New("")[0].Content
+
 	case TypeInfill:
 		// llama.cpp only
 		if !endsWithVersion(api) {
@@ -419,6 +449,23 @@ func query(profile, txt, token string) error {
 			state.Data["input_suffix"] = "\n" + parts[1].Content
 		} else {
 			state.Data["input_suffix"] = ""
+		}
+
+	case TypeFim:
+		api += "completions"
+
+		parts := state.Builder.New("")
+		vars := map[string]interface{}{
+			"prefix": parts[0].Content + "\n",
+			"suffix": "",
+		}
+		if len(parts) > 1 {
+			vars["suffix"] = "\n" + parts[1].Content
+		}
+
+		state.Data["prompt"], err = interpolate(state.FimTmpl, vars)
+		if err != nil {
+			return fmt.Errorf("!infill: %w", err)
 		}
 	}
 

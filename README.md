@@ -82,13 +82,38 @@ still work.
 
 ### Infill mode
 
-If the input contains `!infill`, Illume will use infill mode. Output is to
-be inserted in place of `!infill`, i.e. code generation. Infill requires
-llama.cpp's `/infill` endpoint and a model supporting infill tokens (some
-"coder" models). Most models and endpoints will not work.
+If the input contains `!infill` by itself, Illume operates in infill mode.
+Output is to be inserted in place of `!infill`, i.e. code generation. By
+default it will use the llama.cpp `/infill` endpoint, which requires a
+FIM-trained model with metadata declaring its FIM tokens. This excludes
+most models, including most "coder" models due to missing metadata. There
+are currently no standards and few conventions around FIM, and every model
+implements it differently.
 
-With `illume.vim` do not write `!infill` yourself. The configuration
-inserts it into Illume's input at the cursor position.
+Given an argument, it is memorized as the template, replacing `{prefix}`
+and `{suffix}` with the surrounding input. For example, including a
+leading space in the template:
+
+    !infill  <PRE> {prefix} <SUF>{suffix} <MID>
+
+Write this template according to the model's FIM documentation. Illume
+includes built-in `fim:MODEL` templates for several popular models. This
+form of `!infill` only configures, and does not activate infill mode on
+its own. Put it in a profile.
+
+For example, if generate FIM completions on a remote Codestral running on
+llama.cpp, your Illume profile file might be something like:
+
+    !profile llama.cpp
+    !profile fim:mistral
+    !api http://myllama:8080/v1
+
+With `illume.vim`, do not type a no-argument `!infill` directive yourself.
+The configuration automatically inserts it into Illume's input at the
+cursor position.
+
+**Recommendation**: DeepSeek produces the best FIM output, followed by
+Qwen. Both also work out-of-the-box with llama.cpp `/infill`.
 
 ## Environment
 
@@ -192,9 +217,11 @@ Use completion mode instead of conversational. The LLM will continue
 writing from the end of the document. Cannot be used with `!user` or
 `!assistant`, which are for the (default) chat mode.
 
-### `!infill`
+### `!infill [TEMPLATE]`
 
-Use infill mode, and generate code to be inserted at this position.
+With no template, activate infill mode, and generate code to be inserted
+at this position. Given a template, use that template to generate the
+prompt when infill mode is active.
 
 ### `!debug`
 
