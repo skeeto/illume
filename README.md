@@ -113,7 +113,7 @@ The configuration automatically inserts it into Illume's input at the
 cursor position.
 
 **Recommendation**: DeepSeek produces the best FIM output, followed by
-Qwen. Both also work out-of-the-box with llama.cpp `/infill`.
+Qwen and Granite. Both also work out-of-the-box with llama.cpp `/infill`.
 
 ## Environment
 
