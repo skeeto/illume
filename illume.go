@@ -30,7 +30,8 @@ var Profiles = map[string][]string{
 
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
-		"!infill <｜fim▁begin｜>{prefix}<｜fim▁hole｜>{suffix}<｜fim▁end｜>",
+		"!infill <｜begin▁of▁sentence｜>" +
+			"<｜fim▁begin｜>{prefix}<｜fim▁hole｜>{suffix}<｜fim▁end｜>",
 	},
 	"fim:qwen": []string{ // good, also works with /infill
 		"!infill <|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>",
