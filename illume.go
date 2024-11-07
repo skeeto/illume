@@ -53,15 +53,15 @@ var Profiles = map[string][]string{
 }
 
 func addfile(w *bytes.Buffer, path string, name string) error {
-	w.WriteString("**`")
-	w.WriteString(name)
-	w.WriteString("`**\n")
-
-	body, err := ioutil.ReadFile(name)
+	body, err := ioutil.ReadFile(path)
 	if err != nil {
 		return err
 	}
 	txt := string(body)
+
+	w.WriteString("**`")
+	w.WriteString(name)
+	w.WriteString("`**\n")
 
 	max := 2
 	for line, lines := txt, txt; len(lines) > 0; {
@@ -113,7 +113,9 @@ func addcontext(prompt *bytes.Buffer, line string) error {
 		for _, suffix := range fields[2:] {
 			if strings.HasSuffix(path, suffix) {
 				name := path[cut:]
-				addfile(prompt, path, name)
+				if err := addfile(prompt, path, name); err != nil {
+					return err
+				}
 				break
 			}
 		}
