@@ -179,6 +179,14 @@ func cut(s string, b byte) (string, string, bool) {
 	return s, s[len(s):], false
 }
 
+func marshal(v interface{}) ([]byte, error) {
+	var b bytes.Buffer
+	e := json.NewEncoder(&b)
+	e.SetEscapeHTML(false)
+	err := e.Encode(v)
+	return b.Bytes(), err
+}
+
 func interpolate(s string, vars map[string]interface{}) (string, error) {
 	var b bytes.Buffer
 
@@ -203,7 +211,7 @@ func interpolate(s string, vars map[string]interface{}) (string, error) {
 		if ok {
 			b.WriteString(svalue)
 		} else {
-			r, _ := json.Marshal(value)
+			r, _ := marshal(value)
 			b.Write(r)
 		}
 	}
@@ -476,7 +484,7 @@ func query(profile, txt, token string) error {
 	}
 
 	state.Data["stream"] = true
-	body, _ := json.Marshal(state.Data)
+	body, _ := marshal(state.Data)
 
 	if state.Debug {
 		w := bufio.NewWriter(os.Stdout)
