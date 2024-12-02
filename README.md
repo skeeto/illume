@@ -7,7 +7,7 @@ append its output to your buffer.
 
 ## How to build
 
-Using any Go 1.x compiler:
+With Go 1.7 or later:
 
     $ go build illume.go
 
