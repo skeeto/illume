@@ -26,6 +26,8 @@ A couple of examples running outside of a text editor:
 * `IllumeInfill()`: generate code at the cursor
 * `IllumeStop()`: stop generation in this buffer
 
+`illume.el` is similar for Emacs: `M-x illume` and `M-x illume-stop`.
+
 ## Example usage
 
 Use `!context` to select files to upload as context. These are uploaded in
