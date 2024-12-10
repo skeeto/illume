@@ -24,7 +24,7 @@ var Profiles = map[string][]string{
 	},
 	"huggingface.co": []string{
 		"!api https://api-inference.huggingface.co/models/{model}/v1",
-		"!:model Qwen/Qwen2.5-72B-Instruct",
+		"!:model meta-llama/Llama-3.3-70B-Instruct",
 		"!>x-use-cache false",
 	},
 
