@@ -244,7 +244,7 @@ func NewChatState(token string) *ChatState {
 	s := &ChatState{
 		Api: InvalidUrl,
 		Data: map[string]interface{}{
-			"max_tokens": 1000,
+			"max_tokens": 2000,
 		},
 		UserSet: map[string]bool{},
 		Type:    TypeChat,
