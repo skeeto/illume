@@ -27,6 +27,11 @@ var Profiles = map[string][]string{
 		"!:model meta-llama/Llama-3.3-70B-Instruct",
 		"!>x-use-cache false",
 	},
+	"together": []string{
+		"!api https://huggingface.co/api/inference-proxy/together/v1",
+		"!:model deepseek-ai/DeepSeek-R1",
+		"!:max_tokens 10000",
+	},
 
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
@@ -540,8 +545,12 @@ func query(profile, txt, token string) error {
 		// three different schemas at once. Missing fields are likely
 		// empty strings, and so produce no output.
 		if len(r.Choices) > 0 {
-			w.WriteString(r.Choices[0].Delta.Content) // chat
-			w.WriteString(r.Choices[0].Text)          // completion
+			chat := r.Choices[0].Delta.Content
+			if len(chat) > 0 {
+				w.WriteString(chat)
+			} else {
+				w.WriteString(r.Choices[0].Text)
+			}
 		} else {
 			w.WriteString(r.Content) // completion
 		}
