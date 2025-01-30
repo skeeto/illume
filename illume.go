@@ -30,7 +30,6 @@ var Profiles = map[string][]string{
 	"together": []string{
 		"!api https://huggingface.co/api/inference-proxy/together/v1",
 		"!:model deepseek-ai/DeepSeek-R1",
-		"!profile fim:deepseek",
 		"!:temperature 0.6",
 		"!:max_tokens 10000",
 	},
