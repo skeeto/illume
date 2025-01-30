@@ -560,6 +560,9 @@ func query(profile, txt, token string) error {
 	if err := s.Err(); err != nil {
 		return err
 	}
+	if err := resp.Body.Close(); err != nil {
+		return err
+	}
 
 	return w.Flush()
 }
