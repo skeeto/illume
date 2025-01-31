@@ -30,6 +30,7 @@ var Profiles = map[string][]string{
 	"together": []string{
 		"!api https://huggingface.co/api/inference-proxy/together/v1",
 		"!:model deepseek-ai/DeepSeek-R1",
+		"!profile fim:deepseek",
 		"!:temperature 0.6",
 		"!:max_tokens 10000",
 	},
@@ -349,14 +350,15 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!infill" {
 			if args == "" {
-				if s.Type != TypeFim {
+				if len(s.FimTmpl) > 0 {
+					s.Type = TypeFim
+				} else {
 					s.Type = TypeInfill
 				}
+				s.Builder.New("infill")
 			} else {
-				s.Type = TypeFim
 				s.FimTmpl = args
 			}
-			s.Builder.New("infill")
 			continue
 
 		} else if len(command) > 2 && command[:2] == "!>" {
