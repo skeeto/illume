@@ -10,6 +10,7 @@ import (
 	"os"
 	fp "path/filepath"
 	"strings"
+	"time"
 )
 
 const (
@@ -241,6 +242,7 @@ type ChatState struct {
 	Headers map[string]string
 	Type    int
 	Debug   bool
+	Stats   bool
 }
 
 const (
@@ -315,6 +317,10 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!debug" {
 			s.Debug = true
+			continue
+
+		} else if command == "!stats" {
+			s.Stats = true
 			continue
 
 		} else if command == "!completion" {
@@ -513,7 +519,9 @@ func query(profile, txt, token string) error {
 		req.Header.Set(key, value)
 	}
 
+	time_start := time.Now()
 	resp, err := client.Do(req)
+	time_response := time.Now()
 	if err != nil {
 		return err
 	}
@@ -530,6 +538,7 @@ func query(profile, txt, token string) error {
 		w.Flush()
 	}
 
+	nevents := 0
 	s := bufio.NewScanner(resp.Body)
 	for s.Scan() {
 		line := s.Bytes()
@@ -559,12 +568,24 @@ func query(profile, txt, token string) error {
 		}
 
 		w.Flush()
+		nevents++
 	}
 	if err := s.Err(); err != nil {
 		return err
 	}
 	if err := resp.Body.Close(); err != nil {
 		return err
+	}
+	time_done := time.Now()
+
+	if state.Stats {
+		req_time := time_response.Sub(time_start)
+		stream_time := time_done.Sub(time_response)
+		token_rate := float64(nevents) / stream_time.Seconds()
+		fmt.Fprintf(
+			w, "\n\n!note %.3g tok/s, %d toks, %v",
+			token_rate, nevents, req_time,
+		)
 	}
 
 	return w.Flush()

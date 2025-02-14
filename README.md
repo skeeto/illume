@@ -225,6 +225,10 @@ With no template, activate infill mode, and generate code to be inserted
 at this position. Given a template, use that template to generate the
 prompt when infill mode is active.
 
+### `!stats`
+
+On response completion, inserts a `!note` with timing statistics.
+
 ### `!debug`
 
 Dry run: "reply" with the raw HTTP request instead of querying the API.
