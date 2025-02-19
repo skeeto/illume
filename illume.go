@@ -133,8 +133,18 @@ func addcontext(prompt *bytes.Buffer, line string) error {
 }
 
 type Message struct {
-	Role    string `json:"role"`
-	Content string `json:"content"`
+	Role      string     `json:"role"`
+	Content   string     `json:"content"`
+	ToolCalls []Function `json:"tool_calls,omitempty"`
+}
+
+type Function struct {
+	Function ToolCall
+}
+
+type ToolCall struct {
+	Name      string
+	Arguments string
 }
 
 type Choice struct {
@@ -148,6 +158,8 @@ type Response struct {
 		Delta struct {
 			Content string
 		}
+		Message      Message
+		FinishReason string `json:"finish_reason"`
 	}
 }
 
@@ -163,12 +175,18 @@ func (b *Builder) Append(line string) {
 }
 
 func (b *Builder) New(role string) []Message {
+	if b.Role == "tool" {
+		b.Content.WriteString("</tool_response>")
+	}
 	content := strings.Trim(b.Content.String(), "\r\n")
 	if content != "" {
 		if b.Role == "" {
 			b.Role = "system"
 		}
-		b.Messages = append(b.Messages, Message{b.Role, content})
+		b.Messages = append(b.Messages, Message{b.Role, content, nil})
+	}
+	if role == "tool" {
+		b.Messages = append(b.Messages, Message{"assistant", "", nil})
 	}
 	b.Role = role
 	b.Content = bytes.Buffer{}
@@ -240,6 +258,7 @@ type ChatState struct {
 	Data    map[string]interface{}
 	UserSet map[string]bool
 	Headers map[string]string
+	Tools   []map[string]interface{}
 	Type    int
 	Debug   bool
 	Stats   bool
@@ -354,6 +373,11 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			s.Builder.New(command[1:])
 			continue
 
+		} else if command == "!tool" {
+			s.Builder.New("tool")
+			s.Builder.Content.WriteString("<tool_response>\n")
+			continue
+
 		} else if command == "!infill" {
 			if args == "" {
 				if len(s.FimTmpl) > 0 {
@@ -364,6 +388,31 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 				s.Builder.New("infill")
 			} else {
 				s.FimTmpl = args
+			}
+			continue
+
+		} else if strings.HasPrefix(command, "!tool:") {
+			name := command[6:]
+			type J map[string]interface{}
+			if name == "readfile" {
+				tool := J{
+					"type": "function",
+					"function": J{
+						"name":        "readfile",
+						"description": "Read the contents of a file.",
+						"parameters": J{
+							"type": "object",
+							"properties": J{
+								"path": J{
+									"type":        "string",
+									"description": "Path to an existing file.",
+								},
+							},
+						},
+						"required": []string{"path"},
+					},
+				}
+				s.Tools = append(s.Tools, tool)
 			}
 			continue
 
@@ -497,7 +546,13 @@ func query(profile, txt, token string) error {
 		}
 	}
 
-	state.Data["stream"] = true
+	stream := false
+	if len(state.Tools) > 0 {
+		state.Data["tools"] = state.Tools
+	} else {
+		state.Data["stream"] = true
+		stream = true
+	}
 	body, _ := marshal(state.Data)
 
 	if state.Debug {
@@ -533,6 +588,36 @@ func query(profile, txt, token string) error {
 	}
 
 	w := bufio.NewWriter(os.Stdout)
+
+	if !stream {
+		result, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+
+		var r Response
+		json.Unmarshal(result, &r)
+
+		if r.Choices[0].FinishReason == "tool_calls" {
+			w.WriteString("\n\n!tool\n")
+
+			for _, call := range r.Choices[0].Message.ToolCalls {
+				if call.Function.Name == "readfile" {
+					var args struct{ Path string }
+					json.Unmarshal([]byte(call.Function.Arguments), &args)
+					w.WriteString("!context ")
+					w.WriteString(args.Path)
+					w.WriteString("\n")
+				}
+			}
+
+		} else {
+			w.WriteString("\n\n!assistant\n\n")
+			w.WriteString(r.Choices[0].Message.Content)
+		}
+		return w.Flush()
+	}
+
 	if state.Type == TypeChat {
 		w.WriteString("\n\n!assistant\n\n")
 		w.Flush()
