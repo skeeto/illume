@@ -28,12 +28,43 @@ var Profiles = map[string][]string{
 		"!:model meta-llama/Llama-3.3-70B-Instruct",
 		"!>x-use-cache false",
 	},
+
+	// DeepSeek-R1 providers via HF (ranked best to worst)
+	"deepseek-r1": []string{ // base model configuration
+		"!:temperature 0.6",
+		"!:max_tokens 10000",    // need extra for <think></think>
+		"!profile fim:deepseek", // all providers support FIM
+	},
+	"fireworks-ai": []string{
+		// Fireworks : 65 tok/s, best option
+		"!api https://huggingface.co/api/inference-proxy/fireworks-ai/v1",
+		"!:model accounts/fireworks/models/deepseek-r1",
+		"!profile deepseek-r1",
+	},
 	"together": []string{
+		// Together AI : 25 tok/s, buggy API
 		"!api https://huggingface.co/api/inference-proxy/together/v1",
 		"!:model deepseek-ai/DeepSeek-R1",
-		"!profile fim:deepseek",
-		"!:temperature 0.6",
-		"!:max_tokens 10000",
+		"!profile deepseek-r1",
+	},
+	"novita": []string{
+		// Novita : 15 tok/s, max tokens limited to 8k
+		"!api https://huggingface.co/api/inference-proxy/novita/v1",
+		"!:model deepseek/deepseek-r1",
+		"!profile deepseek-r1",
+		"!:max_tokens 8196",
+	},
+	"hyperbolic": []string{
+		// Hyperbolic : 15 tok/s, buggy inference
+		"!api https://huggingface.co/api/inference-proxy/hyperbolic/v1",
+		"!:model deepseek-ai/DeepSeek-R1",
+		"!profile deepseek-r1",
+	},
+	"nebius": []string{
+		// Nebius AI Studio : 5 tok/s, painfully slow, small quant?
+		"!api https://huggingface.co/api/inference-proxy/nebius/v1",
+		"!:model deepseek-ai/DeepSeek-R1",
+		"!profile deepseek-r1",
 	},
 
 	// Fill in the Middle (FIM), ranked from best to worst.
