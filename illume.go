@@ -82,6 +82,14 @@ var Profiles = map[string][]string{
 		"!:max_tokens 10000",
 	},
 
+	// Anthropic Claude
+	"claude": []string{
+		"!api \"https://api.anthropic.com/v1/messages\"",
+		"!>x-api-key $ANTHROPIC_API_KEY",
+		"!token",
+		"!:max_tokens 10000",
+	},
+
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
 		"!infill <｜begin▁of▁sentence｜>" +
