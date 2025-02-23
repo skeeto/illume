@@ -76,7 +76,7 @@ var Profiles = map[string][]string{
 
 	// Google Gemini
 	"gemini": []string{
-		"!api https://generativelanguage.googleapis.com/v1beta/",
+		"!api https://generativelanguage.googleapis.com/v1beta",
 		"!token $GEMINI_API_KEY",
 		"!:model gemini-2.0-flash",
 		"!:max_tokens 10000",
@@ -356,17 +356,17 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			token := strings.TrimSpace(args)
 			if token == "" {
 				delete(s.Headers, "authorization")
-			} else {
-				if strings.HasPrefix(token, "$") {
-					key := token[1:]
-					token = os.Getenv(key)
-					if len(token) == 0 {
-						return fmt.Errorf(
-							"%s:%d: missing environment variable: %s",
-							name, lineno, key,
-						)
-					}
+			} else if token[0] == '$' {
+				key := token[1:]
+				token = os.Getenv(key)
+				if len(token) == 0 {
+					return fmt.Errorf(
+						"%s:%d: missing environment variable: %s",
+						name, lineno, key,
+					)
 				}
+				s.Headers["authorization"] = "Bearer " + token
+			} else {
 				s.Headers["authorization"] = "Bearer " + token
 			}
 			continue
