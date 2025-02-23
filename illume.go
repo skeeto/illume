@@ -74,6 +74,14 @@ var Profiles = map[string][]string{
 		"!:max_tokens 10000",
 	},
 
+	// Google Gemini
+	"gemini": []string{
+		"!api https://generativelanguage.googleapis.com/v1beta/",
+		"!token $GEMINI_API_KEY",
+		"!:model gemini-2.0-flash",
+		"!:max_tokens 10000",
+	},
+
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
 		"!infill <｜begin▁of▁sentence｜>" +
