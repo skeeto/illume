@@ -493,22 +493,32 @@ func query(profile, txt, token string) error {
 		return fmt.Errorf("interpolating URL: %w", err)
 	}
 
-	if !strings.HasSuffix(api, "/") {
+	strictapi := false
+	if len(api) > 2 && api[0] == '"' && api[len(api)-1] == '"' {
+		api = api[1 : len(api)-1]
+		strictapi = true
+	}
+
+	if !strictapi && !strings.HasSuffix(api, "/") {
 		api += "/"
 	}
 
 	switch state.Type {
 	case TypeChat:
-		api += "chat/completions"
+		if !strictapi {
+			api += "chat/completions"
+		}
 		state.Data["messages"] = state.Builder.New("")
 
 	case TypeCompletion:
-		api += "completions"
+		if !strictapi {
+			api += "completions"
+		}
 		state.Data["prompt"] = state.Builder.New("")[0].Content
 
 	case TypeInfill:
 		// llama.cpp only
-		if !endsWithVersion(api) {
+		if strictapi || !endsWithVersion(api) {
 			return fmt.Errorf("cannot determine infill URL: %s", api)
 		}
 		api = api[:len(api)-3] + "infill"
@@ -536,7 +546,9 @@ func query(profile, txt, token string) error {
 		}
 
 	case TypeFim:
-		api += "completions"
+		if !strictapi {
+			api += "completions"
+		}
 
 		parts := state.Builder.New("")
 		vars := map[string]interface{}{

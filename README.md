@@ -155,6 +155,9 @@ directive. Examples:
     !api http://localhost:8080/v1
     !api https://api-inference.huggingface.co/models/{model}/v1
 
+If the URL is wrapped in quotes, it will be used literally as provided
+without modification.
+
 ### `!context FILE`
 
 Insert a file at this position in the conversation.
