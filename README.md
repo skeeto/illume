@@ -215,7 +215,8 @@ Insert an arbitrary HTTP header into the request. Examples:
     !>authorization
 
 If `VALUE` is missing, the header is deleted. This is, for instance, a
-second for disabling the API token, as shown in the example.
+second for disabling the API token, as shown in the example. If the value
+begins with `$` then it will be retrieved from the environment.
 
 ### `!completion`
 

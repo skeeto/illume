@@ -428,6 +428,8 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			args = strings.TrimSpace(args)
 			if args == "" {
 				delete(s.Headers, key)
+			} else if args[0] == '$' {
+				s.Headers[key] = os.Getenv(args[1:])
 			} else {
 				s.Headers[key] = args
 			}
