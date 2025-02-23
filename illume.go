@@ -349,6 +349,16 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			if token == "" {
 				delete(s.Headers, "authorization")
 			} else {
+				if strings.HasPrefix(token, "$") {
+					key := token[1:]
+					token = os.Getenv(key)
+					if len(token) == 0 {
+						return fmt.Errorf(
+							"%s:%d: missing environment variable: %s",
+							name, lineno, key,
+						)
+					}
+				}
 				s.Headers["authorization"] = "Bearer " + token
 			}
 			continue

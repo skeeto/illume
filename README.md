@@ -142,7 +142,8 @@ if set, otherwise it loads the default profile.
 ### `!token [TOKEN]`
 
 Sets an API token. Overrides `$ILLUME_TOKEN`. Most useful for setting a
-token in a custom profile. Given no token, none will be sent.
+token in a custom profile. Given no token, none will be sent. If the token
+begins with `$` it will be retrieved from the environment.
 
 ### `!api URL`
 
