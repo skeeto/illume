@@ -67,6 +67,13 @@ var Profiles = map[string][]string{
 		"!profile deepseek-r1",
 	},
 
+	// Llama 3.1 405B, SambaNova via HF
+	"hf:sambanova": []string{
+		"!api https://huggingface.co/api/inference-proxy/sambanova/v1",
+		"!:model Meta-Llama-3.1-405B-Instruct",
+		"!:max_tokens 10000",
+	},
+
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
 		"!infill <｜begin▁of▁sentence｜>" +
