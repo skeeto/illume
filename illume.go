@@ -25,8 +25,9 @@ var Profiles = map[string][]string{
 	},
 	"huggingface.co": []string{
 		"!api https://api-inference.huggingface.co/models/{model}/v1",
-		"!:model meta-llama/Llama-3.3-70B-Instruct",
+		"!>authorization Bearer $HF_TOKEN",
 		"!>x-use-cache false",
+		"!:model meta-llama/Llama-3.3-70B-Instruct",
 	},
 
 	// DeepSeek-R1 providers via HF (ranked best to worst)
@@ -38,38 +39,44 @@ var Profiles = map[string][]string{
 	"hf:fireworks-ai": []string{
 		// Fireworks : 65 tok/s, best option
 		"!api https://huggingface.co/api/inference-proxy/fireworks-ai/v1",
-		"!:model accounts/fireworks/models/deepseek-r1",
+		"!profile huggingface.co",
 		"!profile deepseek-r1",
+		"!:model accounts/fireworks/models/deepseek-r1",
 	},
 	"hf:together": []string{
 		// Together AI : 25 tok/s, buggy API
 		"!api https://huggingface.co/api/inference-proxy/together/v1",
-		"!:model deepseek-ai/DeepSeek-R1",
+		"!profile huggingface.co",
 		"!profile deepseek-r1",
+		"!:model deepseek-ai/DeepSeek-R1",
 	},
 	"hf:novita": []string{
 		// Novita : 15 tok/s, max tokens limited to 8k
 		"!api https://huggingface.co/api/inference-proxy/novita/v1",
-		"!:model deepseek/deepseek-r1",
+		"!profile huggingface.co",
 		"!profile deepseek-r1",
+		"!:model deepseek/deepseek-r1",
 		"!:max_tokens 8196",
 	},
 	"hf:hyperbolic": []string{
 		// Hyperbolic : 15 tok/s, buggy inference
 		"!api https://huggingface.co/api/inference-proxy/hyperbolic/v1",
-		"!:model deepseek-ai/DeepSeek-R1",
+		"!profile huggingface.co",
 		"!profile deepseek-r1",
+		"!:model deepseek-ai/DeepSeek-R1",
 	},
 	"hf:nebius": []string{
 		// Nebius AI Studio : 5 tok/s, painfully slow, small quant?
 		"!api https://huggingface.co/api/inference-proxy/nebius/v1",
-		"!:model deepseek-ai/DeepSeek-R1",
+		"!profile huggingface.co",
 		"!profile deepseek-r1",
+		"!:model deepseek-ai/DeepSeek-R1",
 	},
 
 	// Llama 3.1 405B, SambaNova via HF
 	"hf:sambanova": []string{
 		"!api https://huggingface.co/api/inference-proxy/sambanova/v1",
+		"!profile huggingface.co",
 		"!:model Meta-Llama-3.1-405B-Instruct",
 		"!:max_tokens 10000",
 	},
@@ -77,7 +84,7 @@ var Profiles = map[string][]string{
 	// Google Gemini
 	"gemini": []string{
 		"!api https://generativelanguage.googleapis.com/v1beta",
-		"!token $GEMINI_API_KEY",
+		"!>authorization Bearer $GEMINI_API_KEY",
 		"!:model gemini-2.0-flash",
 		"!:max_tokens 10000",
 	},
@@ -86,7 +93,6 @@ var Profiles = map[string][]string{
 	"claude": []string{
 		"!api \"https://api.anthropic.com/v1/messages\"",
 		"!>x-api-key $ANTHROPIC_API_KEY",
-		"!token",
 		"!:max_tokens 10000",
 	},
 
@@ -303,7 +309,7 @@ const (
 	InvalidUrl = "http://invalid./"
 )
 
-func NewChatState(token string) *ChatState {
+func NewChatState() *ChatState {
 	s := &ChatState{
 		Api: InvalidUrl,
 		Data: map[string]interface{}{
@@ -315,11 +321,6 @@ func NewChatState(token string) *ChatState {
 			"content-type": "application/json",
 		},
 	}
-
-	if token != "" {
-		s.Headers["authorization"] = "Bearer " + token
-	}
-
 	return s
 }
 
@@ -357,25 +358,6 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			profile := strings.TrimSpace(args)
 			if err := s.LoadProfile(profile, depth); err != nil {
 				return fmt.Errorf("%s:%d: %w", name, lineno, err)
-			}
-			continue
-
-		} else if command == "!token" {
-			token := strings.TrimSpace(args)
-			if token == "" {
-				delete(s.Headers, "authorization")
-			} else if token[0] == '$' {
-				key := token[1:]
-				token = os.Getenv(key)
-				if len(token) == 0 {
-					return fmt.Errorf(
-						"%s:%d: missing environment variable: %s",
-						name, lineno, key,
-					)
-				}
-				s.Headers["authorization"] = "Bearer " + token
-			} else {
-				s.Headers["authorization"] = "Bearer " + token
 			}
 			continue
 
@@ -436,10 +418,8 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 			args = strings.TrimSpace(args)
 			if args == "" {
 				delete(s.Headers, key)
-			} else if args[0] == '$' {
-				s.Headers[key] = os.Getenv(args[1:])
 			} else {
-				s.Headers[key] = args
+				s.Headers[key] = os.ExpandEnv(args)
 			}
 			continue
 
@@ -478,10 +458,10 @@ func endsWithVersion(s string) bool {
 	return n > 3 && s[n-3] == 'v' && s[n-2] >= '0' && s[n-2] <= '9'
 }
 
-func query(profile, txt, token string) error {
+func query(profile, txt string) error {
 	var (
 		client http.Client
-		state  = NewChatState(token)
+		state  = NewChatState()
 	)
 
 	if err := state.Load("<stdin>", txt, 0); err != nil {
@@ -676,8 +656,7 @@ func run() error {
 	}
 
 	profile := os.Getenv("ILLUME_PROFILE")
-	token := os.Getenv("ILLUME_TOKEN")
-	return query(profile, string(body), token)
+	return query(profile, string(body))
 }
 
 func main() {

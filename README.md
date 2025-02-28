@@ -119,8 +119,6 @@ Qwen and Granite. Both also work out-of-the-box with llama.cpp `/infill`.
 
 ## Environment
 
-`$ILLUME_TOKEN` provides the API token. If unset no API token is sent.
-
 `$ILLUME_PROFILE` selects an API profile, which configures a URL and
 flavor. The program has several built-in profiles (see `Profiles` in the
 source). If this variable contains a slash, the contents of the file at
@@ -138,12 +136,6 @@ role, which is where you can write a system prompt.
 Load a profile. JSON `!:KEY` directives in the profile do not override
 user-set keys. If no `!profile` is given, Illume loads `$ILLUME_PROFILE`
 if set, otherwise it loads the default profile.
-
-### `!token [TOKEN]`
-
-Sets an API token. Overrides `$ILLUME_TOKEN`. Most useful for setting a
-token in a custom profile. Given no token, none will be sent. If the token
-begins with `$` it will be retrieved from the environment.
 
 ### `!api URL`
 
@@ -216,7 +208,7 @@ Insert an arbitrary HTTP header into the request. Examples:
 
 If `VALUE` is missing, the header is deleted. This is, for instance, a
 second for disabling the API token, as shown in the example. If the value
-begins with `$` then it will be retrieved from the environment.
+contains `$VAR` then Illume will expand it from the environment.
 
 ### `!completion`
 
