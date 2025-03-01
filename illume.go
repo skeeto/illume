@@ -92,7 +92,9 @@ var Profiles = map[string][]string{
 	// Anthropic Claude
 	"claude": []string{
 		"!api \"https://api.anthropic.com/v1/messages\"",
+		"!>anthropic-version 2023-06-01",
 		"!>x-api-key $ANTHROPIC_API_KEY",
+		"!:model claude-3-7-sonnet-latest",
 		"!:max_tokens 10000",
 	},
 
@@ -208,6 +210,9 @@ type Response struct {
 		Delta struct {
 			Content string
 		}
+	}
+	Delta struct { // Anthropic
+		Text string
 	}
 }
 
@@ -622,7 +627,8 @@ func query(profile, txt string) error {
 				w.WriteString(r.Choices[0].Text)
 			}
 		} else {
-			w.WriteString(r.Content) // completion
+			w.WriteString(r.Content)    // completion
+			w.WriteString(r.Delta.Text) // Anthropic
 		}
 
 		w.Flush()
