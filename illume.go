@@ -198,6 +198,71 @@ func addcontext(prompt *bytes.Buffer, line string) error {
 	})
 }
 
+type Reddit struct {
+	Kind string
+	Data struct {
+		Subreddit string
+		Title     string
+		Author    string
+		SelfText  string
+		Body      string
+		Children  []Reddit
+		Replies   *Reddit
+	}
+}
+
+func replyprefix(w *bytes.Buffer, depth int) {
+	for i := 0; i < depth; i++ {
+		w.WriteByte('>')
+	}
+	if depth > 0 {
+		w.WriteByte(' ')
+	}
+}
+
+func emitcomment(w *bytes.Buffer, depth int, reddit []Reddit) {
+	for _, comment := range reddit {
+		w.WriteByte('\n')
+		replyprefix(w, depth-1)
+		fmt.Fprintf(w, "u/%s:\n", comment.Data.Author)
+		s := bufio.NewScanner(strings.NewReader(comment.Data.Body))
+		for s.Scan() {
+			replyprefix(w, depth)
+			w.WriteString(s.Text())
+			w.WriteByte('\n')
+		}
+		if comment.Data.Replies != nil {
+			emitcomment(w, depth+1, comment.Data.Replies.Data.Children)
+		}
+	}
+}
+
+// Embed a reddit thread by its JSON representation.
+func emitreddit(w *bytes.Buffer, path string, withcomments bool) error {
+	body, err := ioutil.ReadFile(path)
+	if err != nil {
+		return err
+	}
+
+	var reddit []Reddit
+	json.Unmarshal(body, &reddit)
+	if len(reddit) < 1 {
+		return fmt.Errorf("failed to parse JSON: %s\n", path)
+	}
+
+	post := reddit[0].Data.Children[0].Data
+	w.WriteString("# Reddit Post\n\n")
+	fmt.Fprintf(w, "%s\n", post.Title)
+	fmt.Fprintf(w, "by u/%s in r/%s\n", post.Author, post.Subreddit)
+	fmt.Fprintf(w, "---\n%s\n---\n", post.SelfText)
+	if withcomments && len(reddit) > 1 {
+		emitcomment(w, 1, reddit[1].Data.Children)
+		w.WriteString("---\n")
+	}
+
+	return nil
+}
+
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -385,6 +450,20 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!context" {
 			if err := addcontext(&s.Builder.Content, line); err != nil {
+				return fmt.Errorf("%s:%d: %w", name, lineno, err)
+			}
+			continue
+
+		} else if command == "!reddit" {
+			path := strings.TrimSpace(args)
+			if err := emitreddit(&s.Builder.Content, path, true); err != nil {
+				return fmt.Errorf("%s:%d: %w", name, lineno, err)
+			}
+			continue
+
+		} else if command == "!reddit!" {
+			path := strings.TrimSpace(args)
+			if err := emitreddit(&s.Builder.Content, path, false); err != nil {
 				return fmt.Errorf("%s:%d: %w", name, lineno, err)
 			}
 			continue

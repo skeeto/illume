@@ -222,6 +222,19 @@ With no template, activate infill mode, and generate code to be inserted
 at this position. Given a template, use that template to generate the
 prompt when infill mode is active.
 
+### `!reddit FILE`
+
+Like `!context` but embed a reddit post from its JSON representation
+(append `.json` to the URL and then download it). Includes all comments
+with threading.
+
+    !reddit some-reddit-post.json
+    Please summarize this reddit post and its comments.
+
+### `!reddit! FILE`
+
+Like `!reddit` but just the post with no comments.
+
 ### `!stats`
 
 On response completion, inserts a `!note` with timing statistics.
