@@ -19,7 +19,7 @@ const (
 
 var Profiles = map[string][]string{
 	"llama.cpp": []string{
-		"!api http://localhost:8080/v1",
+		"!api http://localhost:8080/",
 		"!:cache_prompt true",
 		`!:stop ["<|im_end|>"]`,
 	},
@@ -463,11 +463,6 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 	return nil
 }
 
-func endsWithVersion(s string) bool {
-	n := len(s)
-	return n > 3 && s[n-3] == 'v' && s[n-2] >= '0' && s[n-2] <= '9'
-}
-
 func query(profile, txt string) error {
 	var (
 		client http.Client
@@ -518,10 +513,9 @@ func query(profile, txt string) error {
 
 	case TypeInfill:
 		// llama.cpp only
-		if strictapi || !endsWithVersion(api) {
-			return fmt.Errorf("cannot determine infill URL: %s", api)
+		if !strictapi {
+			api += "infill"
 		}
-		api = api[:len(api)-3] + "infill"
 
 		// TODO: Reduce the number of predicted tokens? In general, the
 		// reliability of generated code follows the inverse-square law

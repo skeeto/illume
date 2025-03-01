@@ -108,7 +108,7 @@ llama.cpp, your Illume profile file might be something like:
 
     !profile llama.cpp
     !profile fim:mistral
-    !api http://myllama:8080/v1
+    !api http://myllama:8080/
 
 With `illume.vim`, do not type a no-argument `!infill` directive yourself.
 The configuration automatically inserts it into Illume's input at the
@@ -139,13 +139,13 @@ if set, otherwise it loads the default profile.
 
 ### `!api URL`
 
-Sets the API base URL. Typically ends with `v1` or `v2`. Any `{…}` in the
-URL interpolates JSON values from `!:KEY` directives. This is done just
-before making the request, and so may reference keys set after the `!api`
-directive. Examples:
+Sets the API base URL. When not llama.cpp, it typically ends with `/v1` or
+`/v2`. Illume interpolates `{…}` in the URL from `!:KEY` directives. It's
+done just before making the request, and so may reference keys set after
+the `!api` directive. Examples:
 
-    !api http://localhost:8080/v1
     !api https://api-inference.huggingface.co/models/{model}/v1
+    !:model mistralai/Mistral-Nemo-Instruct-2407
 
 If the URL is wrapped in quotes, it will be used literally as provided
 without modification.
