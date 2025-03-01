@@ -97,6 +97,10 @@ var Profiles = map[string][]string{
 		"!:model claude-3-7-sonnet-latest",
 		"!:max_tokens 10000",
 	},
+	"claude-extended": []string{
+		"!profile claude",
+		`!:thinking {"type": "enabled", "budget_tokens": 5000}`,
+	},
 
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
@@ -212,7 +216,8 @@ type Response struct {
 		}
 	}
 	Delta struct { // Anthropic
-		Text string
+		Text     string
+		Thinking string
 	}
 }
 
@@ -601,6 +606,7 @@ func query(profile, txt string) error {
 		w.Flush()
 	}
 
+	nthinking := 0
 	nevents := 0
 	s := bufio.NewScanner(resp.Body)
 	for s.Scan() {
@@ -626,9 +632,20 @@ func query(profile, txt string) error {
 			} else {
 				w.WriteString(r.Choices[0].Text)
 			}
+		} else if len(r.Delta.Thinking) > 0 { // Anthropic
+			if nthinking == 0 {
+				w.WriteString("<think>\n")
+			}
+			nthinking++
+			w.WriteString(r.Delta.Thinking)
+		} else if len(r.Delta.Text) > 0 { // Anthropic
+			if nthinking > 0 {
+				w.WriteString("\n</think>\n\n")
+				nthinking = 0
+			}
+			w.WriteString(r.Delta.Text)
 		} else {
-			w.WriteString(r.Content)    // completion
-			w.WriteString(r.Delta.Text) // Anthropic
+			w.WriteString(r.Content) // completion
 		}
 
 		w.Flush()
