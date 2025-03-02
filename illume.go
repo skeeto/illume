@@ -8,6 +8,8 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 	fp "path/filepath"
 	"strings"
 	"time"
@@ -408,11 +410,25 @@ func (s *ChatState) LoadProfile(profile string, depth int) error {
 			buf.WriteString("\n")
 		}
 		body = buf.String()
-	} else {
 
+	} else {
 		buf, err := ioutil.ReadFile(profile)
 		if err != nil {
-			return err
+			if strings.ContainsAny(profile, "/\\") {
+				return err // do not search
+			}
+
+			// Search for *.profile next to the executable
+			exe, exeerr := os.Executable()
+			if exeerr != nil {
+				return err // search fail: return original error
+			}
+			relpath := path.Join(filepath.Dir(exe), profile+".profile")
+			relbuf, relerr := ioutil.ReadFile(relpath)
+			if relerr != nil {
+				return err // search fail: return original error
+			}
+			buf = relbuf
 		}
 		body = string(buf)
 	}
@@ -542,7 +558,7 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 	return nil
 }
 
-func query(profile, txt string) error {
+func query(txt string) error {
 	var (
 		client http.Client
 		state  = NewChatState()
@@ -554,6 +570,7 @@ func query(profile, txt string) error {
 
 	if state.Profile == "" {
 		// No profile loaded yet. Load one now.
+		profile := os.Getenv("ILLUME_PROFILE")
 		if profile == "" {
 			profile = DefaultProfile
 		}
@@ -750,9 +767,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
-
-	profile := os.Getenv("ILLUME_PROFILE")
-	return query(profile, string(body))
+	return query(string(body))
 }
 
 func main() {

@@ -7,7 +7,7 @@ append its output to your buffer.
 
 ## How to build
 
-With Go 1.7 or later:
+With Go 1.10 or later:
 
     $ go build illume.go
 
@@ -103,11 +103,11 @@ includes built-in `fim:MODEL` templates for several popular models. This
 form of `!infill` only configures, and does not activate infill mode on
 its own. Put it in a profile.
 
-For example, if generate FIM completions on a remote Codestral running on
-llama.cpp, your Illume profile file might be something like:
+For example, to generate FIM completions on a remote DeepSeek model
+running on llama.cpp, your Illume profile file might be something like:
 
     !profile llama.cpp
-    !profile fim:mistral
+    !profile fim:deepseek
     !api http://myllama:8080/
 
 With `illume.vim`, do not type a no-argument `!infill` directive yourself.
@@ -115,15 +115,18 @@ The configuration automatically inserts it into Illume's input at the
 cursor position.
 
 **Recommendation**: DeepSeek produces the best FIM output, followed by
-Qwen and Granite. Both also work out-of-the-box with llama.cpp `/infill`.
+Qwen and Granite. All three work out-of-the-box with llama.cpp `/infill`,
+but work best with an Illume FIM profile.
 
-## Environment
+## Profiles
 
-`$ILLUME_PROFILE` selects an API profile, which configures a URL and
-flavor. The program has several built-in profiles (see `Profiles` in the
-source). If this variable contains a slash, the contents of the file at
-that path are prepended to all inputs. Use this to set the URL, extra
-keys, HTTP headers, or even a system prompt.
+`$ILLUME_PROFILE` sets the default profile. The default profile is like an
+implicit `!profile` when none is specified. A profile sets the URL, extra
+keys, HTTP headers, or even a system prompt. Illume supplies many built-in
+profiles: see `Profiles` in the source. If the profile name contains a
+slash, the profile is read from that file. Otherwise it's matched against
+a built-in profile, or a file with a `.profile` suffix next to the Illume
+executable.
 
 ## Directives
 
