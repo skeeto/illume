@@ -104,6 +104,14 @@ var Profiles = map[string][]string{
 		`!:thinking {"type": "enabled", "budget_tokens": 5000}`,
 	},
 
+	"openai": []string{
+		"!api https://api.openai.com/v1",
+		"!>authorization Bearer $OPENAI_API_KEY",
+		"!:model gpt-4o-mini",
+		"!:max_tokens",
+		"!:max_completion_tokens 10000",
+	},
+
 	// Fill in the Middle (FIM), ranked from best to worst.
 	"fim:deepseek": []string{ // best of class, works with /infill
 		"!infill <｜begin▁of▁sentence｜>" +
