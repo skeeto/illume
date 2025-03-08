@@ -75,6 +75,20 @@ var Profiles = map[string][]string{
 		"!:model deepseek-ai/DeepSeek-R1",
 	},
 
+	// QwQ 32B
+	// https://docs.unsloth.ai/basics/tutorial-how-to-run-qwq-32b-effectively
+	"qwq": []string{
+		"!:top_k 40",
+		"!:top_p 0.95",
+		"!:min_p 0.02",
+		"!:temperature 0.6",
+		"!:repeat_penalty 1.0",
+		"!:dry_multiplier 0.5",
+		`!:samplers ` +
+			`["top_k","top_p","min_p","temperature","dry","typ_p","xtc"]`,
+		"!:max_tokens 20000", // needs lots of tokens
+	},
+
 	// Llama 3.1 405B, SambaNova via HF
 	"hf:sambanova": []string{
 		"!api https://huggingface.co/api/inference-proxy/sambanova/v1",
