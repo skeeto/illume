@@ -287,6 +287,51 @@ func emitreddit(w *bytes.Buffer, path string, withcomments bool) error {
 	return nil
 }
 
+type GitHub struct {
+	HtmlUrl string `json:"html_url"`
+	Title   string
+	User    struct{ Login string }
+	Body    string
+}
+
+func emitgithub(w *bytes.Buffer, paths []string) error {
+	if len(paths) < 1 {
+		return fmt.Errorf("!github requires at least one argument")
+	}
+
+	body, err := ioutil.ReadFile(paths[0])
+	if err != nil {
+		return err
+	}
+
+	var issue GitHub
+	json.Unmarshal(body, &issue)
+	fmt.Fprintf(w, "---\n")
+	fmt.Fprintf(w, "%s\n", issue.HtmlUrl)
+	fmt.Fprintf(w, "%s\n", issue.Title)
+	fmt.Fprintf(w, "by @%s\n\n", issue.User.Login)
+	fmt.Fprintf(w, "%s\n", issue.Body)
+
+	for _, path := range paths[1:] {
+		body, err := ioutil.ReadFile(path)
+		if err != nil {
+			return err
+		}
+		var comments []GitHub
+		json.Unmarshal(body, &comments)
+		for _, comment := range comments {
+			fmt.Fprintf(w, "\n@%s:\n", comment.User.Login)
+			s := bufio.NewScanner(strings.NewReader(comment.Body))
+			for s.Scan() {
+				fmt.Fprintf(w, "> %s\n", s.Text())
+			}
+		}
+	}
+
+	fmt.Fprintf(w, "---\n")
+	return nil
+}
+
 type Message struct {
 	Role    string `json:"role"`
 	Content string `json:"content"`
@@ -502,6 +547,13 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 		} else if command == "!reddit!" {
 			path := strings.TrimSpace(args)
 			if err := emitreddit(&s.Builder.Content, path, false); err != nil {
+				return fmt.Errorf("%s:%d: %w", name, lineno, err)
+			}
+			continue
+
+		} else if command == "!github" {
+			args := strings.Fields(line)[1:]
+			if err := emitgithub(&s.Builder.Content, args); err != nil {
 				return fmt.Errorf("%s:%d: %w", name, lineno, err)
 			}
 			continue

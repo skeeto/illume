@@ -238,6 +238,19 @@ with threading.
 
 Like `!reddit` but just the post with no comments.
 
+### `!github issue.json [comments.json]`
+
+Like `!reddit` but insert a GitHub issue for inspection, and optionally
+the issue comments. You can download these in the GitHub API.
+
+    https://api.github.com/repos/USER/REPO/issues/ID
+    https://api.github.com/repos/USER/REPO/issues/ID/comments
+
+Combine it with `!context` on GitHub's "patch" output to embed the entire
+context of a pull request.
+
+    https://github.com/USER/REPO/pull/ID.patch
+
 ### `!stats`
 
 On response completion, inserts a `!note` with timing statistics.
