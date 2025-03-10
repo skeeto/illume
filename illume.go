@@ -115,7 +115,8 @@ var Profiles = map[string][]string{
 	},
 	"claude-extended": []string{
 		"!profile claude",
-		`!:thinking {"type": "enabled", "budget_tokens": 5000}`,
+		"!:max_tokens 20000",
+		`!:thinking {"type": "enabled", "budget_tokens": 10000}`,
 	},
 
 	"openai": []string{
