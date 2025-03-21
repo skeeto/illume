@@ -40,7 +40,7 @@ var Profiles = map[string][]string{
 	},
 	"hf:fireworks-ai": []string{
 		// Fireworks : 65 tok/s, best option
-		"!api https://huggingface.co/api/inference-proxy/fireworks-ai/v1",
+		"!api https://router.huggingface.co/fireworks-ai/inference/v1",
 		"!profile huggingface.co",
 		"!profile deepseek-r1",
 		"!:model accounts/fireworks/models/deepseek-r1",
