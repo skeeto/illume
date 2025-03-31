@@ -37,6 +37,7 @@ var Profiles = map[string][]string{
 		"!:temperature 0.6",
 		"!:max_tokens 10000",    // need extra for <think></think>
 		"!profile fim:deepseek", // all providers support FIM
+		"!exclude think",
 	},
 	"hf:fireworks-ai": []string{
 		// Fireworks : 65 tok/s, best option
@@ -87,6 +88,7 @@ var Profiles = map[string][]string{
 		`!:samplers ` +
 			`["top_k","top_p","min_p","temperature","dry","typ_p","xtc"]`,
 		"!:max_tokens 20000", // needs lots of tokens
+		"!exclude think",
 	},
 
 	// Llama 3.1 405B, SambaNova via HF
@@ -117,6 +119,7 @@ var Profiles = map[string][]string{
 		"!profile claude",
 		"!:max_tokens 20000",
 		`!:thinking {"type": "enabled", "budget_tokens": 10000}`,
+		"!exclude think",
 	},
 
 	"openai": []string{
@@ -438,17 +441,19 @@ const (
 )
 
 type ChatState struct {
-	Profile string
-	Api     string
-	FimTmpl string
-	Prepend string
-	Builder Builder
-	Data    map[string]interface{}
-	UserSet map[string]bool
-	Headers map[string]string
-	Type    int
-	Debug   bool
-	Stats   bool
+	Profile   string
+	Api       string
+	FimTmpl   string
+	Prepend   string
+	Exclude   string
+	Builder   Builder
+	Data      map[string]interface{}
+	UserSet   map[string]bool
+	Headers   map[string]string
+	Type      int
+	Debug     bool
+	Stats     bool
+	Excluding bool
 }
 
 const (
@@ -505,11 +510,43 @@ func (s *ChatState) LoadProfile(profile string, depth int) error {
 	return s.Load(profile, body, depth+1) // may recurse
 }
 
+const (
+	TagNone = iota
+	TagOpen
+	TagClose
+)
+
+func tagmatch(s string, tag string) int {
+	if len(s) > 2 && s[0] == '<' && s[len(s)-1] == '>' {
+		if len(s) == len(tag)+2 {
+			if s[1:1+len(tag)] == tag {
+				return TagOpen
+			}
+		} else if len(s) == len(tag)+3 {
+			if s[2:2+len(tag)] == tag && s[1] == '/' {
+				return TagClose
+			}
+		}
+	}
+	return TagNone
+}
+
 func (s *ChatState) Load(name, txt string, depth int) error {
 	lineno := 1
 	for line, lines := txt, txt; len(lines) > 0; lineno++ {
 		line, lines, _ = cut(lines, '\n')
 		command, args, _ := cut(line, ' ')
+
+		if len(s.Exclude) > 0 {
+			match := tagmatch(line, s.Exclude)
+			if s.Excluding {
+				s.Excluding = match != TagClose
+				continue
+			} else if !s.Excluding && match == TagOpen {
+				s.Excluding = true
+				continue
+			}
+		}
 
 		if strings.HasPrefix(line, "!!") {
 			line = line[1:] // escape "!!" as "!"
@@ -569,6 +606,10 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!note" {
 			// used for comments
+			continue
+
+		} else if command == "!exclude" {
+			s.Exclude = strings.TrimSpace(args)
 			continue
 
 		} else if command == "!begin" {

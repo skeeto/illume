@@ -197,6 +197,12 @@ still effective.
 
 Stop processing directives and ignore the rest of the input.
 
+### `!exclude TAG`
+
+Skip sections of input surrounded by this tags. For example, use `think`
+as the tag to omit `<think>` `</think>` reasoning text from the completion
+query, which is generally how reasoning models are designed to work.
+
 ### `!:KEY VALUE`
 
 Insert an arbitrary JSON value into the query object. Examples:
