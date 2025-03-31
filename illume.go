@@ -441,6 +441,7 @@ type ChatState struct {
 	Profile string
 	Api     string
 	FimTmpl string
+	Prepend string
 	Builder Builder
 	Data    map[string]interface{}
 	UserSet map[string]bool
@@ -526,6 +527,13 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!stats" {
 			s.Stats = true
+			continue
+
+		} else if command == "!prepend" {
+			if len(args) > 1 && args[0] == '"' {
+				json.Unmarshal(([]byte)(args), &args)
+			}
+			s.Prepend = args
 			continue
 
 		} else if command == "!completion" {
@@ -768,6 +776,7 @@ func query(txt string) error {
 	w := bufio.NewWriter(os.Stdout)
 	if state.Type == TypeChat {
 		w.WriteString("\n\n!assistant\n\n")
+		w.WriteString(state.Prepend)
 		w.Flush()
 	}
 

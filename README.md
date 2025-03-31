@@ -179,6 +179,14 @@ modify these to trick the LLM into thinking it said something different.
 
 These lines are not sent to the LLM. Used to annotate conversations.
 
+### `!prepend STRING`
+
+Prepend a string to all responses. Use this, for example, to prepend an
+opening `<think>` tag from an inference provider that puts such a tag in
+their chat template but doesn't include the tag in the response. If the
+string is wrapped in quotes, the contents are backslash-escape decoded *a
+la* JSON.
+
 ### `!begin`
 
 Discard all messages before this line. Used to "comment out" headers in
