@@ -91,6 +91,15 @@ var Profiles = map[string][]string{
 		"!exclude think",
 	},
 
+    // https://docs.unsloth.ai/basics/gemma-3-how-to-run-and-fine-tune
+	"gemma-3": []string{
+        "!:temperature 1.0",
+        "!:top_k 64",
+        "!:top_p 0.95",
+        "!:min_p 0.01",
+        "!:repeat_penalty 1.0",
+    },
+
 	// Llama 3.1 405B, SambaNova via HF
 	"hf:sambanova": []string{
 		"!api https://huggingface.co/api/inference-proxy/sambanova/v1",
