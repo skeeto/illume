@@ -65,14 +65,13 @@ var Profiles = map[string][]string{
 	// Qwen3
 	// https://docs.unsloth.ai/basics/qwen3-how-to-run-and-fine-tune
 	"qwen3": []string{
-        "/no_think",
+		"/no_think",
 		"!:temperature 0.7",
 		"!:min_p 0.0",
 		"!:top_p 0.8",
 		"!:top_k 20",
 		"!exclude think",
 	},
-
 	"qwen3-think": []string{
 		"!:temperature 0.6",
 		"!:min_p 0.0",
@@ -80,16 +79,16 @@ var Profiles = map[string][]string{
 		"!:top_k 20",
 		"!:max_tokens 16384",
 		"!exclude think",
-    },
+	},
 
-    // https://docs.unsloth.ai/basics/gemma-3-how-to-run-and-fine-tune
+	// https://docs.unsloth.ai/basics/gemma-3-how-to-run-and-fine-tune
 	"gemma-3": []string{
-        "!:temperature 1.0",
-        "!:top_k 64",
-        "!:top_p 0.95",
-        "!:min_p 0.01",
-        "!:repeat_penalty 1.0",
-    },
+		"!:temperature 1.0",
+		"!:top_k 64",
+		"!:top_p 0.95",
+		"!:min_p 0.01",
+		"!:repeat_penalty 1.0",
+	},
 
 	// Google Gemini
 	"gemini": []string{
