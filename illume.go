@@ -46,35 +46,6 @@ var Profiles = map[string][]string{
 		"!profile deepseek-r1",
 		"!:model accounts/fireworks/models/deepseek-r1",
 	},
-	"hf:together": []string{
-		// Together AI : 25 tok/s, buggy API
-		"!api https://huggingface.co/api/inference-proxy/together/v1",
-		"!profile huggingface.co",
-		"!profile deepseek-r1",
-		"!:model deepseek-ai/DeepSeek-R1",
-	},
-	"hf:novita": []string{
-		// Novita : 15 tok/s, max tokens limited to 8k
-		"!api https://huggingface.co/api/inference-proxy/novita/v1",
-		"!profile huggingface.co",
-		"!profile deepseek-r1",
-		"!:model deepseek/deepseek-r1",
-		"!:max_tokens 8196",
-	},
-	"hf:hyperbolic": []string{
-		// Hyperbolic : 15 tok/s, buggy inference
-		"!api https://huggingface.co/api/inference-proxy/hyperbolic/v1",
-		"!profile huggingface.co",
-		"!profile deepseek-r1",
-		"!:model deepseek-ai/DeepSeek-R1",
-	},
-	"hf:nebius": []string{
-		// Nebius AI Studio : 5 tok/s, painfully slow, small quant?
-		"!api https://huggingface.co/api/inference-proxy/nebius/v1",
-		"!profile huggingface.co",
-		"!profile deepseek-r1",
-		"!:model deepseek-ai/DeepSeek-R1",
-	},
 
 	// QwQ 32B
 	// https://docs.unsloth.ai/basics/tutorial-how-to-run-qwq-32b-effectively
@@ -99,14 +70,6 @@ var Profiles = map[string][]string{
         "!:min_p 0.01",
         "!:repeat_penalty 1.0",
     },
-
-	// Llama 3.1 405B, SambaNova via HF
-	"hf:sambanova": []string{
-		"!api https://huggingface.co/api/inference-proxy/sambanova/v1",
-		"!profile huggingface.co",
-		"!:model Meta-Llama-3.1-405B-Instruct",
-		"!:max_tokens 10000",
-	},
 
 	// Google Gemini
 	"gemini": []string{
