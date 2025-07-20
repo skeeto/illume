@@ -103,7 +103,7 @@ var Profiles = map[string][]string{
 		"!api \"https://api.anthropic.com/v1/messages\"",
 		"!>anthropic-version 2023-06-01",
 		"!>x-api-key $ANTHROPIC_API_KEY",
-		"!:model claude-3-7-sonnet-latest",
+		"!:model claude-opus-4-0",
 		"!:max_tokens 10000",
 	},
 	"claude-extended": []string{
