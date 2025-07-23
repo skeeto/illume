@@ -81,6 +81,16 @@ var Profiles = map[string][]string{
 		"!exclude think",
 	},
 
+	// Qwen3 2507
+	// https://docs.unsloth.ai/basics/qwen3-how-to-run-and-fine-tune/qwen3-2507
+	"qwen3-instruct": []string{
+		"!:temperature 0.7",
+		"!:min_p 0.0",
+		"!:top_p 0.8",
+		"!:top_k 20",
+		"!:max_tokens 16384",
+	},
+
 	// https://docs.unsloth.ai/basics/gemma-3-how-to-run-and-fine-tune
 	"gemma-3": []string{
 		"!:temperature 1.0",
