@@ -32,36 +32,6 @@ var Profiles = map[string][]string{
 		"!:model meta-llama/Llama-3.3-70B-Instruct",
 	},
 
-	// DeepSeek-R1 providers via HF (ranked best to worst)
-	"deepseek-r1": []string{ // base model configuration
-		"!:temperature 0.6",
-		"!:max_tokens 10000",    // need extra for <think></think>
-		"!profile fim:deepseek", // all providers support FIM
-		"!exclude think",
-	},
-	"hf:fireworks-ai": []string{
-		// Fireworks : 65 tok/s, best option
-		"!api https://router.huggingface.co/fireworks-ai/inference/v1",
-		"!profile huggingface.co",
-		"!profile deepseek-r1",
-		"!:model accounts/fireworks/models/deepseek-r1",
-	},
-
-	// QwQ 32B
-	// https://docs.unsloth.ai/basics/tutorial-how-to-run-qwq-32b-effectively
-	"qwq": []string{
-		"!:top_k 40",
-		"!:top_p 0.95",
-		"!:min_p 0.02",
-		"!:temperature 0.6",
-		"!:repeat_penalty 1.0",
-		"!:dry_multiplier 0.5",
-		`!:samplers ` +
-			`["top_k","top_p","min_p","temperature","dry","typ_p","xtc"]`,
-		"!:max_tokens 20000", // needs lots of tokens
-		"!exclude think",
-	},
-
 	// Qwen3
 	// https://docs.unsloth.ai/basics/qwen3-how-to-run-and-fine-tune
 	"qwen3": []string{
