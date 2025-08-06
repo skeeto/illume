@@ -265,6 +265,10 @@ context of a pull request.
 
     https://github.com/USER/REPO/pull/ID.patch
 
+### `!gpt-oss`
+
+Perform special token handling required for GPT-OSS thinking tokens.
+
 ### `!stats`
 
 On response completion, inserts a `!note` with timing statistics.

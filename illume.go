@@ -32,6 +32,17 @@ var Profiles = map[string][]string{
 		"!:model meta-llama/Llama-3.3-70B-Instruct",
 	},
 
+	// GPT-OSS
+	// https://docs.unsloth.ai/basics/gpt-oss-how-to-run-and-fine-tune
+	"gpt-oss": []string{
+		"!:temperature 0.6",
+		"!:top_k 0",
+		"!:top_p 1.0",
+		"!:max_tokens 16384",
+		"!gpt-oss",
+		"!exclude think",
+	},
+
 	// Qwen3
 	// https://docs.unsloth.ai/basics/qwen3-how-to-run-and-fine-tune
 	"qwen3": []string{
@@ -425,6 +436,7 @@ type ChatState struct {
 	Debug     bool
 	Stats     bool
 	Excluding bool
+	GptOss    bool
 }
 
 const (
@@ -577,6 +589,10 @@ func (s *ChatState) Load(name, txt string, depth int) error {
 
 		} else if command == "!note" {
 			// used for comments
+			continue
+
+		} else if command == "!gpt-oss" {
+			s.GptOss = true
 			continue
 
 		} else if command == "!exclude" {
@@ -792,6 +808,15 @@ func query(txt string) error {
 		w.Flush()
 	}
 
+	const (
+		GptInit = iota
+		GptName
+		GptMessage
+		GptRole
+	)
+	gptstate := GptInit
+	gptname := ""
+
 	nthinking := 0
 	nevents := 0
 	s := bufio.NewScanner(resp.Body)
@@ -814,22 +839,54 @@ func query(txt string) error {
 		if len(r.Choices) > 0 {
 			chat := r.Choices[0].Delta.Content
 			if len(chat) > 0 {
-				w.WriteString(chat)
+				// Assumes llama.cpp sends one token at at time, which is the
+				// only way think tokens could be processed unambigously.
+				if state.GptOss && chat == "<|channel|>" {
+					gptstate = GptName
+				} else if gptstate == GptName {
+					gptname = chat
+					gptstate = GptMessage
+				} else if gptstate == GptMessage {
+					if chat != "<|message|>" {
+						w.WriteString("<|channel|>")
+						w.WriteString(gptname)
+						w.WriteString(chat)
+					} else {
+						switch gptname {
+						case "analysis":
+							w.WriteString("<think>\n")
+						case "final":
+							w.WriteString("\n</think>\n\n")
+						}
+					}
+					gptstate = GptInit
+				} else if state.GptOss && chat == "<|start|>" {
+					gptstate = GptRole
+				} else if gptstate == GptRole {
+					// drop role name ("assistant")
+					gptstate = GptInit
+				} else {
+					w.WriteString(chat)
+				}
+
 			} else {
 				w.WriteString(r.Choices[0].Text)
 			}
+
 		} else if len(r.Delta.Thinking) > 0 { // Anthropic
 			if nthinking == 0 {
 				w.WriteString("<think>\n")
 			}
 			nthinking++
 			w.WriteString(r.Delta.Thinking)
+
 		} else if len(r.Delta.Text) > 0 { // Anthropic
 			if nthinking > 0 {
 				w.WriteString("\n</think>\n\n")
 				nthinking = 0
 			}
 			w.WriteString(r.Delta.Text)
+
 		} else {
 			w.WriteString(r.Content) // completion
 		}
