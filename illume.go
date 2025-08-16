@@ -812,6 +812,7 @@ func query(txt string) error {
 		GptInit = iota
 		GptName
 		GptMessage
+		GptStart
 		GptRole
 	)
 	gptstate := GptInit
@@ -860,6 +861,8 @@ func query(txt string) error {
 						}
 					}
 					gptstate = GptInit
+				} else if state.GptOss && chat == "<|end|>" {
+					gptstate = GptStart
 				} else if state.GptOss && chat == "<|start|>" {
 					gptstate = GptRole
 				} else if gptstate == GptRole {
