@@ -107,7 +107,7 @@ var Profiles = map[string][]string{
 	"openai": []string{
 		"!api https://api.openai.com/v1",
 		"!>authorization Bearer $OPENAI_API_KEY",
-		"!:model gpt-4.1-mini",
+		"!:model gpt-5-nano",
 		"!:max_tokens",
 		"!:max_completion_tokens 10000",
 	},
