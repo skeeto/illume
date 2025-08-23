@@ -85,7 +85,7 @@ var Profiles = map[string][]string{
 	"gemini": []string{
 		"!api https://generativelanguage.googleapis.com/v1beta",
 		"!>authorization Bearer $GEMINI_API_KEY",
-		"!:model gemini-2.5-pro-exp-03-25",
+		"!:model gemini-2.5-pro",
 		"!:max_tokens 10000",
 	},
 
