@@ -124,6 +124,9 @@ var Profiles = map[string][]string{
 	"fim:granite": []string{ // good
 		"!infill <fim_prefix>{prefix}<fim_suffix>{suffix}<fim_middle>",
 	},
+	"fim:granite4": []string{ // good
+		"!infill <|fim_prefix|>{prefix}<|fim_suffix|>{suffix}<|fim_middle|>",
+	},
 	"fim:mistral": []string{ // specifically codestral, mediocre
 		"!infill [SUFFIX]{suffix}[PREFIX]{prefix}",
 	},
